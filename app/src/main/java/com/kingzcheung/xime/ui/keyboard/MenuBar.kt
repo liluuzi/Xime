@@ -25,6 +25,7 @@ import androidx.compose.material.icons.twotone.EmojiEmotions
 import androidx.compose.material.icons.twotone.Keyboard
 import androidx.compose.material.icons.twotone.LightMode
 import androidx.compose.material.icons.twotone.Padding
+import androidx.compose.material.icons.twotone.Palette
 import androidx.compose.material.icons.twotone.PictureInPicture
 import androidx.compose.material.icons.twotone.Quickreply
 import androidx.compose.material.icons.twotone.Rotate90DegreesCcw
@@ -70,6 +71,7 @@ data class MenuBarCallbacks(
     val onSettings: () -> Unit,
     val onSchemaList: () -> Unit,
     val onToggleDarkMode: () -> Unit,
+    val onThemeColorSwitch: () -> Unit = {},
     val onFloatingModeToggle: (() -> Unit)? = null,
     val onToolbarCustomize: () -> Unit = {},
 )
@@ -96,6 +98,7 @@ fun MenuBar(
         1 -> rememberVectorPainter(Icons.TwoTone.LightMode)
         else -> rememberVectorPainter(if (state.isDarkTheme) Icons.TwoTone.LightMode else Icons.TwoTone.DarkMode)
     }
+    val themeColorIcon = rememberVectorPainter(Icons.TwoTone.Palette)
     val deployIcon = rememberVectorPainter(Icons.TwoTone.Rotate90DegreesCcw)
     val customizeIcon = rememberVectorPainter(Icons.TwoTone.Padding)
     val schemaIcon = rememberVectorPainter(Icons.TwoTone.Keyboard)
@@ -117,6 +120,7 @@ fun MenuBar(
             MenuItem(quickSendIcon, "快捷发送", callbacks.onQuickSend),
             MenuItem(keyboardResizeIcon, "键盘调节", callbacks.onKeyboardResize),
             MenuItem(emojiIcon, "表情", callbacks.onEmoji),
+            MenuItem(themeColorIcon, "主题色", callbacks.onThemeColorSwitch),
             MenuItem(floatingIcon, floatingLabel, floatingAction),
             MenuItem(darkModeIcon, darkModeLabel, callbacks.onToggleDarkMode),
             MenuItem(deployIcon, "部署方案", callbacks.onReloadConfig),

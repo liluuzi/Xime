@@ -392,7 +392,7 @@ fun KeyboardLayout(
                                 backgroundColor = specialKeyBackgroundColor,
                                 iconColor = specialKeyTextColor,
                                 modifier = Modifier
-                                    .padding(2.dp,4.dp)
+                                    .padding(start = 2.dp, top = 4.dp, end = 8.dp, bottom = 4.dp)
                                     .weight(1.4f)
                                     .fillMaxHeight(),
                                 shadowEnabled = shadowEnabled,
@@ -509,7 +509,7 @@ fun KeyboardLayout(
                                 backgroundColor = specialKeyBackgroundColor,
                                 iconColor = specialKeyTextColor,
                                 modifier = Modifier
-                                    .padding(2.dp,0.dp)
+                                    .padding(start = 8.dp, end = 2.dp)
                                     .weight(1.4f)
                                     .fillMaxHeight(),
                                 swipeText = "清空",
@@ -564,13 +564,13 @@ fun KeyboardLayout(
                                 modifier = Modifier.weight(1.2f)
                             )
                         } else {
-                            // 符号 — 切换到符号面板
+                            // 符 — 切换到符号面板
                             SwipeableKeyButton(
-                                text = "符号",
+                                text = "符",
                                 onClick = { onKeyPress("mode_change_common_symbol") },
                                 backgroundColor = specialKeyBackgroundColor,
                                 textColor = specialKeyTextColor,
-                                modifier = Modifier.weight(1.0f),
+                                modifier = Modifier.weight(1.2f),
                                 onPress = { onKeyPressDown?.invoke("mode_change_common_symbol") },
                                 onRelease = { onKeyRelease?.invoke("mode_change_common_symbol") },
                                 onSwipeStateChange = { state, bounds -> processSwipeState(state, bounds) },
@@ -579,13 +579,13 @@ fun KeyboardLayout(
                                 shadowShapeRadius = shadowShapeRadius,
                             )
 
-                            // 数字 — 切换到数字键盘
+                            // 123 — 切换到数字键盘
                             SwipeableKeyButton(
-                                text = "数字",
+                                text = "123",
                                 onClick = { onKeyPress("mode_change_number") },
                                 backgroundColor = specialKeyBackgroundColor,
                                 textColor = specialKeyTextColor,
-                                modifier = Modifier.weight(0.8f),
+                                modifier = Modifier.weight(0.9f),
                                 onPress = { onKeyPressDown?.invoke("mode_change_number") },
                                 onRelease = { onKeyRelease?.invoke("mode_change_number") },
                                 onSwipeStateChange = { state, bounds -> processSwipeState(state, bounds) },
@@ -707,7 +707,7 @@ fun KeyboardLayout(
                             shadowEnabled = shadowEnabled,
                             shadowElevation = shadowElevation,
                             shadowShapeRadius = shadowShapeRadius,
-                            modifier = Modifier.weight(3f),
+                            modifier = Modifier.weight(2.5f),
                             onKeyPress = onKeyPress,
                             onKeyPressDown = onKeyPressDown,
                             onKeyRelease = onKeyRelease,
@@ -728,15 +728,16 @@ fun KeyboardLayout(
                                 modifier = Modifier.weight(1.2f)
                             )
                         } else {
-                            // 。 — 上屏句号
+                            // 。 — 上屏句号/英文句点
+                            val periodText = if (isAsciiMode) "." else "。"
                             SwipeableKeyButton(
-                                text = "。",
-                                onClick = { onKeyPress("。") },
+                                text = periodText,
+                                onClick = { onKeyPress(periodText) },
                                 backgroundColor = keyBackgroundColor,
                                 textColor = keyTextColor,
                                 modifier = Modifier.weight(0.8f),
-                                onPress = { onKeyPressDown?.invoke("。") },
-                                onRelease = { onKeyRelease?.invoke("。") },
+                                onPress = { onKeyPressDown?.invoke(periodText) },
+                                onRelease = { onKeyRelease?.invoke(periodText) },
                                 onSwipeStateChange = { state, bounds -> processSwipeState(state, bounds) },
                                 shadowEnabled = shadowEnabled,
                                 shadowElevation = shadowElevation,
@@ -819,7 +820,7 @@ fun KeyboardLayout(
                                     onClick = k4OnClick,
                                     backgroundColor = keyBackgroundColor,
                                     iconColor = keyTextColor,
-                                    modifier = Modifier.weight(0.8f),
+                                    modifier = Modifier.weight(0.9f),
                                     onPress = { onKeyPressDown?.invoke(k4TapValue) },
                                     onRelease = { onKeyRelease?.invoke(k4TapValue) },
                                     shadowEnabled = shadowEnabled,
@@ -833,7 +834,7 @@ fun KeyboardLayout(
                                     onClick = k4OnClick,
                                     backgroundColor = keyBackgroundColor,
                                     textColor = keyTextColor,
-                                    modifier = Modifier.weight(0.8f),
+                                    modifier = Modifier.weight(0.9f),
                                     icon = k4Icon,
                                     swipeText = k4SwipeUpLabel.takeIf { it.isNotEmpty() },
                                     swipeDownText = k4SwipeDownBubbleText,

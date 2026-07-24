@@ -946,45 +946,51 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
                                     onCandidateSelect = { index ->
                                         selectCandidate(index)
                                     },
-                                    onAssociationSelect = { index ->
-                                        feedbackManager.performKeyPressEffect(view = view)
-                                        val cs = candidateState.value
-                                        val adjustedCandidates = if (cs.pendingEnglishText.isNotEmpty()) {
-                                            listOf(cs.pendingEnglishText) + cs.associationCandidates
+                            onAssociationSelect = { index ->
+                                feedbackManager.performKeyPressEffect(view = view)
+                                val cs = candidateState.value
+                                val adjustedCandidates = if (cs.pendingEnglishText.isNotEmpty()) {
+                                    listOf(cs.pendingEnglishText) + cs.associationCandidates
+                                } else {
+                                    cs.associationCandidates
+                                }
+                                if (index >= 0 && index < adjustedCandidates.size) {
+                                    val text = adjustedCandidates[index]
+                                    val pendingEnglish = cs.pendingEnglishText
+                                    if (pendingEnglish.isNotEmpty()) {
+                                        if (index == 0 && text == pendingEnglish) {
+                                            candidateState.value = candidateState.value.copy(
+                                                pendingEnglishText = "",
+                                                associationCandidates = emptyList()
+                                            )
+                                            Log.d(TAG, "Confirmed pending English: '$text'")
                                         } else {
-                                            cs.associationCandidates
+                                            currentInputConnection?.deleteSurroundingText(pendingEnglish.length, 0)
+                                            commitText(text)
+                                            candidateState.value = candidateState.value.copy(
+                                                pendingEnglishText = "",
+                                                associationCandidates = emptyList()
+                                            )
+                                            Log.d(TAG, "Replaced '$pendingEnglish' with association: '$text'")
                                         }
-                                        if (index >= 0 && index < adjustedCandidates.size) {
-                                            val text = adjustedCandidates[index]
-                                            val pendingEnglish = cs.pendingEnglishText
-                                            if (pendingEnglish.isNotEmpty()) {
-                                                if (index == 0 && text == pendingEnglish) {
-                                                    commitText(text)
-                                                    candidateState.value = candidateState.value.copy(
-                                                        pendingEnglishText = "",
-                                                        associationCandidates = emptyList()
-                                                    )
-                                                    Log.d(TAG, "Confirmed pending English: '$text'")
-                                                } else {
-                                                    // 键入时已用 setComposingText 建立 composing region，
-                                                    // commitText 自然替换 composing 文本，终端也兼容。
-                                                    commitText(text)
-                                                    candidateState.value = candidateState.value.copy(
-                                                        pendingEnglishText = "",
-                                                        associationCandidates = emptyList()
-                                                    )
-                                                    Log.d(TAG, "Replaced '$pendingEnglish' with association: '$text'")
-                                                }
-                                            } else {
-                                                commitText(text)
-                                                updateUI()
-                                            }
-                                        }
-                                    },
+                                    } else {
+                                        commitText(text)
+                                        updateUI()
+                                    }
+                                }
+                            },
                                     onClearAssociation = {
                                         candidateState.value = candidateState.value.copy(associationCandidates = emptyList())
                                     },
                                     onToggleDarkMode = { toggleDarkMode() },
+                                    onThemeColorSwitch = {
+                                        val themes = com.kingzcheung.xime.ui.theme.KeyboardThemes.themes
+                                        val currentId = SettingsPreferences.getKeyboardTheme(this@XimeInputMethodService)
+                                        val idx = themes.indexOfFirst { it.id == currentId }
+                                        val next = if (idx < 0 || idx >= themes.size - 1) themes[0] else themes[idx + 1]
+                                        SettingsPreferences.setKeyboardTheme(this@XimeInputMethodService, next.id)
+                                        uiState.value = uiState.value.copy(themeId = next.id)
+                                    },
                                     onClipboard = { Log.d(TAG, "Clipboard clicked") },
                                     onClipboardSelect = { text -> selectClipboardItem(text) },
                                     onCommitText = { text -> commitClipboardText(text) },
@@ -1482,47 +1488,12 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
         // 先重置候选状态到初始值，避免前一 session 的残留状态影响新输入
         candidateState.value = CandidateState()
 
-        // 获取最近30秒的剪切板内容
-        ensureClipboardManagerInitialized()
-        try {
-            recentClipboardItemsState.value = clipboardManager.getRecentItems(30)
-            // 将最近剪切板内容显示在候选栏
-            candidateState.value = candidateState.value.copy(
-                candidates = recentClipboardItemsState.value.map { it.text },
-                candidateComments = emptyList(),
-                isShowingRecentClipboard = true
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to get recent clipboard items", e)
-        }
-
-        // 监听clipboardItems变化，更新候选栏
-        clipboardCollectorJob?.cancel()
-        clipboardCollectorJob = serviceScope.launch {
-            clipboardManager.clipboardItems.collect { _ ->
-                val items = clipboardManager.getRecentItems(30)
-                recentClipboardItemsState.value = items
-                if (items.isNotEmpty()) {
-                    // 清空Rime联想词等
-                    rimeEngine.clearComposition()
-                    candidateState.value = candidateState.value.copy(
-                        candidates = items.map { it.text.take(8) + if (it.text.length > 8) "..." else "" },
-                        candidateComments = emptyList(),
-                        inputText = "",
-                        isComposing = false,
-                        associationCandidates = emptyList(),
-                        isShowingRecentClipboard = true
-                    )
-                } else if (candidateState.value.isShowingRecentClipboard) {
-                    // 如果没有recent items，清空候选栏
-                    candidateState.value = candidateState.value.copy(
-                        candidates = emptyList(),
-                        candidateComments = emptyList(),
-                        isShowingRecentClipboard = false
-                    )
-                }
-            }
-        }
+        // 清空候选栏初始状态
+        candidateState.value = candidateState.value.copy(
+            candidates = emptyList(),
+            candidateComments = emptyList(),
+            isShowingRecentClipboard = false
+        )
 
         attribute?.let { updateEnterKeyText(it) }
     }
@@ -2167,10 +2138,12 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
                     calculatorEngine.clear()
                     updateCalculatorCandidates()
                     if (candState.isComposing) {
-                        val input = candState.inputText
-                        if (input.isNotEmpty()) {
+                        rimeEngine.processKey(0xff0d, 0)
+                        val enterCommit = rimeEngine.commit()
+                        val text = if (enterCommit.isNotEmpty()) enterCommit else candState.inputText
+                        if (text.isNotEmpty()) {
                             withContext(Dispatchers.Main) {
-                                commitText(input)
+                                commitText(text)
                             }
                         }
                         rimeEngine.clearComposition()
@@ -2227,13 +2200,13 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
 
                     if (pendingEnglish.isNotEmpty()) {
                         withContext(Dispatchers.Main) {
-                            commitText(pendingEnglish + " ")
+                            commitText(" ")
                             candidateState.value = candidateState.value.copy(
                                 pendingEnglishText = "",
                                 associationCandidates = emptyList()
                             )
                         }
-                        Log.d(TAG, "Space: committed '$pendingEnglish '")
+                        Log.d(TAG, "Space: cleared pending '$pendingEnglish', inserted space")
                     } else if (candState.isComposing) {
                         if (candState.candidates.isNotEmpty()) {
                             selectCandidateAsync(0)
@@ -2393,12 +2366,11 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
                                 } else {
                                     val committed = result.committedText
                                     if (state.isAsciiMode && committed.isNotEmpty() && result.inputText.isEmpty() && result.candidates.isEmpty()) {
-                                        val current = candState.pendingEnglishText
-                                        val newPending = current + committed
-                                        candidateState.value = candidateState.value.copy(pendingEnglishText = newPending)
                                         withContext(Dispatchers.Main) {
-                                            currentInputConnection?.setComposingText(newPending, 1)
+                                            commitText(committed)
                                         }
+                                        val newPending = candState.pendingEnglishText + committed
+                                        candidateState.value = candidateState.value.copy(pendingEnglishText = newPending)
                                         uiEventChannel.trySend {
                                             updateUIWithResult(result)
                                             if (calculatorEngine.isActive()) updateCalculatorCandidates()
@@ -2416,18 +2388,16 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
                                 if (!candState.isComposing || isShiftedChinese) {
                                                     if (isAscii) {
                                                         val charToCommit = if (isShifted) char.uppercase() else char.lowercase()
-                                                        val currentPending = candState.pendingEnglishText
-                                                        val newPending = currentPending + charToCommit
-                                                        // 用 setComposingText 建立 composing region，选关联候选时 commitText 自然替换
+                                                        val newPending = candState.pendingEnglishText + charToCommit
                                                         withContext(Dispatchers.Main) {
-                                                            currentInputConnection?.setComposingText(newPending, 1)
+                                                            commitText(charToCommit)
                                                         }
                                                         candidateState.value = candidateState.value.copy(
                                                             pendingEnglishText = newPending,
                                                             associationCandidates = emptyList()
                                                         )
                                                         needsUIUpdate = true
-                                                        Log.d(TAG, "English mode: setComposingText '$newPending'")
+                                                        Log.d(TAG, "English mode: commitText '$charToCommit', pending='$newPending'")
                                     } else {
                                         committedText = char
                                         needsUIUpdate = true
@@ -2738,25 +2708,18 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
         val candState = candidateState.value
         val pendingEnglish = candState.pendingEnglishText
         if (pendingEnglish.isNotEmpty()) {
-            withContext(Dispatchers.Main) {
-                commitText(pendingEnglish)
-                candidateState.value = candidateState.value.copy(
-                    pendingEnglishText = "",
-                    associationCandidates = emptyList()
-                )
-            }
-        } else if (candState.isComposing) {
-            if (candState.candidates.isNotEmpty()) {
-                selectCandidateAsync(0)
-            } else {
-                val input = candState.inputText
-                if (input.isNotEmpty()) {
-                    commitText(input)
-                    rimeEngine.clearComposition()
-                }
-            }
+            candidateState.value = candidateState.value.copy(
+                pendingEnglishText = "",
+                associationCandidates = emptyList()
+            )
+        }
+        if (candState.isComposing) {
+            rimeEngine.clearComposition()
         }
         rimeEngine.toggleAsciiMode()
+        withContext(Dispatchers.Main) {
+            currentInputConnection?.finishComposingText()
+        }
         updateUI()
     }
     

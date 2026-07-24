@@ -569,7 +569,7 @@ private fun T9KeyboardContent(
             }
 
             KeyButton(
-                text = "符号",
+                text = "符",
                 onClick = { onKeyPress("symbol") },
                 backgroundColor = specialKeyBackgroundColor,
                 textColor = specialKeyTextColor,

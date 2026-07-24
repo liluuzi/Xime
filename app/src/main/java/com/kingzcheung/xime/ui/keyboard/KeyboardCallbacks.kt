@@ -10,6 +10,7 @@ data class KeyboardCallbacks(
     val onAssociationSelect: ((Int) -> Unit)? = null,
     val onClearAssociation: (() -> Unit)? = null,
     val onToggleDarkMode: (() -> Unit)? = null,
+    val onThemeColorSwitch: (() -> Unit)? = null,
     val onClipboard: (() -> Unit)? = null,
     val onClipboardSelect: ((String) -> Unit)? = null,
     val onCommitText: ((String) -> Unit)? = null,

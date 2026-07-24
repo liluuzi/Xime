@@ -800,6 +800,7 @@ fun KeyboardView(
                             onSettings = { callbacks.onSettings?.invoke(); viewModel.closeOverlay() },
                             onSchemaList = { viewModel.pushOverlay(OverlayRoute.SchemaList) },
                             onToggleDarkMode = { callbacks.onToggleDarkMode?.invoke() },
+                            onThemeColorSwitch = { callbacks.onThemeColorSwitch?.invoke() },
                             onToolbarCustomize = { viewModel.showOverlay(OverlayRoute.ToolbarCustomize) },
                             onFloatingModeToggle = { callbacks.onFloatingModeChange?.invoke(!state.isFloatingMode); viewModel.closeOverlay() },
                         ),

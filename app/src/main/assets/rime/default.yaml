@@ -159,7 +159,7 @@ editor:
     - { when: composing, accept: Right, send: Right }
 
 spacer:
-  max_width: 1
+  max_width: 0
 
 style:
   horizontal: true
