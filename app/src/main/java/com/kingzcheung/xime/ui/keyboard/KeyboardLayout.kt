@@ -545,28 +545,49 @@ fun KeyboardLayout(
                         if (isVoiceMode) {
                             DummyKeyButton(
                                 backgroundColor = specialKeyBackgroundColor.copy(alpha = 0.5f),
-                                modifier = Modifier.weight(1.2f)
+                                modifier = Modifier.weight(1.0f)
                             )
                             DummyKeyButton(
                                 backgroundColor = specialKeyBackgroundColor.copy(alpha = 0.5f),
                                 modifier = Modifier.weight(0.8f)
                             )
+                            DummyKeyButton(
+                                backgroundColor = keyBackgroundColor.copy(alpha = 0.5f),
+                                modifier = Modifier.weight(0.8f)
+                            )
+                            DummyKeyButton(
+                                backgroundColor = keyBackgroundColor.copy(alpha = 0.5f),
+                                modifier = Modifier.weight(0.8f)
+                            )
+                            DummyKeyButton(
+                                backgroundColor = specialKeyBackgroundColor.copy(alpha = 0.5f),
+                                modifier = Modifier.weight(1.2f)
+                            )
                         } else {
-                            // ?123 — 硬编码（长按弹出 t9/t26 图标）
+                            // 符号 — 切换到符号面板
                             SwipeableKeyButton(
-                                text = "?123",
-                                onClick = { onKeyPress("mode_change") },
+                                text = "符号",
+                                onClick = { onKeyPress("mode_change_common_symbol") },
                                 backgroundColor = specialKeyBackgroundColor,
                                 textColor = specialKeyTextColor,
-                                modifier = Modifier.weight(1.2f),
-                                onPress = { onKeyPressDown?.invoke("mode_change") },
-                                onRelease = { onKeyRelease?.invoke("mode_change") },
-                                onLongPressSelect = { label -> onKeyPress(if (label == "number") "mode_change_number" else "mode_change_common_symbol") },
-                                longPressItems = listOf("number", "common_symbol"),
-                                longPressDrawableIds = listOf(
-                                    com.kingzcheung.xime.R.drawable.t9,
-                                    com.kingzcheung.xime.R.drawable.t26
-                                ),
+                                modifier = Modifier.weight(1.0f),
+                                onPress = { onKeyPressDown?.invoke("mode_change_common_symbol") },
+                                onRelease = { onKeyRelease?.invoke("mode_change_common_symbol") },
+                                onSwipeStateChange = { state, bounds -> processSwipeState(state, bounds) },
+                                shadowEnabled = shadowEnabled,
+                                shadowElevation = shadowElevation,
+                                shadowShapeRadius = shadowShapeRadius,
+                            )
+
+                            // 数字 — 切换到数字键盘
+                            SwipeableKeyButton(
+                                text = "数字",
+                                onClick = { onKeyPress("mode_change_number") },
+                                backgroundColor = specialKeyBackgroundColor,
+                                textColor = specialKeyTextColor,
+                                modifier = Modifier.weight(0.8f),
+                                onPress = { onKeyPressDown?.invoke("mode_change_number") },
+                                onRelease = { onKeyRelease?.invoke("mode_change_number") },
                                 onSwipeStateChange = { state, bounds -> processSwipeState(state, bounds) },
                                 shadowEnabled = shadowEnabled,
                                 shadowElevation = shadowElevation,
@@ -693,7 +714,6 @@ fun KeyboardLayout(
                             onVoiceModeChange = onVoiceModeChange,
                         )
 
-                        // 中/英切换 + 回车（硬编码 + 配置驱动）
                         if (isVoiceMode) {
                             DummyKeyButton(
                                 backgroundColor = keyBackgroundColor.copy(alpha = 0.5f),
@@ -701,9 +721,28 @@ fun KeyboardLayout(
                             )
                             DummyKeyButton(
                                 backgroundColor = specialKeyBackgroundColor.copy(alpha = 0.5f),
+                                modifier = Modifier.weight(0.8f)
+                            )
+                            DummyKeyButton(
+                                backgroundColor = specialKeyBackgroundColor.copy(alpha = 0.5f),
                                 modifier = Modifier.weight(1.2f)
                             )
                         } else {
+                            // 。 — 上屏句号
+                            SwipeableKeyButton(
+                                text = "。",
+                                onClick = { onKeyPress("。") },
+                                backgroundColor = keyBackgroundColor,
+                                textColor = keyTextColor,
+                                modifier = Modifier.weight(0.8f),
+                                onPress = { onKeyPressDown?.invoke("。") },
+                                onRelease = { onKeyRelease?.invoke("。") },
+                                onSwipeStateChange = { state, bounds -> processSwipeState(state, bounds) },
+                                shadowEnabled = shadowEnabled,
+                                shadowElevation = shadowElevation,
+                                shadowShapeRadius = shadowShapeRadius,
+                            )
+
                             // earth — 从配置读取
                             val k4KeyGesture = KeysConfigHelper.getKeyGesture("earth", isAsciiMode)
                             val k4TapAction = k4KeyGesture?.tap?.action

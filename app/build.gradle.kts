@@ -184,11 +184,12 @@ val buildTrie by tasks.registering {
     }
 }
 
-tasks.named("preBuild").configure {
-    dependsOn(downloadOnnx)
-    dependsOn(buildSherpaOnnx)
-    dependsOn(buildTrie)
-}
+// 预编译 .so 已从发布版提取，跳过原生构建
+// tasks.named("preBuild").configure {
+//     dependsOn(downloadOnnx)
+//     dependsOn(buildSherpaOnnx)
+//     dependsOn(buildTrie)
+// }
 
 tasks.register("copyPluginsToAssets", Copy::class) {
     group = "plugin-dev"
@@ -367,13 +368,13 @@ android {
         buildConfig = true
     }
     
-    // NDK 构建配置
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/jni/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
+    // NDK 构建配置（已使用预编译 .so，跳过）
+    // externalNativeBuild {
+    //     cmake {
+    //         path = file("src/main/jni/CMakeLists.txt")
+    //         version = "3.22.1"
+    //     }
+    // }
     
     // 打包配置
     packaging {
