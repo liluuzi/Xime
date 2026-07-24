@@ -1987,9 +1987,11 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
                     calculatorEngine.handleDelete()
                     updateCalculatorCandidates()
                     
+                    val layoutState = keyboardViewModel.keyboardState.value
+                    val isNumberOrSymbol = layoutState is KeyboardLayoutState.Number || layoutState is KeyboardLayoutState.Symbol
+                    
                     // 数字/符号键盘：直接发送系统退格，不经过 Rime
                     // 防止 T9 残留状态被 Rime 退格修改导致 UI 不一致
-                    val layoutState = keyboardViewModel.keyboardState.value
                     if (layoutState is KeyboardLayoutState.Number || layoutState is KeyboardLayoutState.Symbol) {
                         withContext(Dispatchers.Main) {
                             sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
@@ -2330,10 +2332,18 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
                         val isLetter = key.matches(Regex("[a-zA-Z]"))
                         val isShiftedChinese = isShifted && isChinese && isLetter
 
-                        // Shifted non-letter keys: send character code to Rime (like soft keyboard does),
-                        // avoiding Rime misinterpreting physical keycodes as internal actions.
+                        // Shifted non-letter keys
                         if (isShifted && !isLetter) {
-                            if (char.length == 1) {
+                            if (state.isAsciiMode) {
+                                rimeEngine.clearComposition()
+                                committedText = char
+                                candidateState.value = candidateState.value.copy(
+                                    pendingEnglishText = "",
+                                    associationCandidates = emptyList()
+                                )
+                                needsUIUpdate = true
+                                Log.d(TAG, "ASCII mode: commit shifted symbol '$char'")
+                            } else if (char.length == 1) {
                                 val charCode = char[0].code
                                 val processed = rimeEngine.processKey(charCode, 0)
                                 if (processed) {
@@ -2355,61 +2365,46 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
                                 Log.d(TAG, "Shift+symbol: multi-char '$char' committed directly")
                             }
                         } else {
-                            val processed = rimeEngine.processKey(keyCode, mask)
-                            if (processed) {
-                                val result = rimeEngine.getProcessResult(processed)
-                                if (isShiftedChinese && result.committedText != char) {
-                                    rimeEngine.clearComposition()
-                                    committedText = char
-                                    needsUIUpdate = true
-                                    Log.d(TAG, "Shift+letter in Chinese mode: Rime consumed key but didn't produce uppercase, committing '$char' directly")
-                                } else {
-                                    val committed = result.committedText
-                                    if (state.isAsciiMode && committed.isNotEmpty() && result.inputText.isEmpty() && result.candidates.isEmpty()) {
-                                        withContext(Dispatchers.Main) {
-                                            commitText(committed)
-                                        }
-                                        val newPending = candState.pendingEnglishText + committed
-                                        candidateState.value = candidateState.value.copy(pendingEnglishText = newPending)
-                                        uiEventChannel.trySend {
-                                            updateUIWithResult(result)
-                                            if (calculatorEngine.isActive()) updateCalculatorCandidates()
-                                        }
+                            // ASCII mode: skip Rime entirely, commit directly
+                            if (state.isAsciiMode) {
+                                rimeEngine.clearComposition()
+                                committedText = if (isShifted) char.uppercase() else char.lowercase()
+                                candidateState.value = candidateState.value.copy(
+                                    pendingEnglishText = "",
+                                    associationCandidates = emptyList()
+                                )
+                                needsUIUpdate = true
+                                Log.d(TAG, "ASCII mode: commitText '$committedText'")
+                            } else {
+                                val processed = rimeEngine.processKey(keyCode, mask)
+                                if (processed) {
+                                    val result = rimeEngine.getProcessResult(processed)
+                                    if (isShiftedChinese && result.committedText != char) {
+                                        rimeEngine.clearComposition()
+                                        committedText = char
+                                        needsUIUpdate = true
+                                        Log.d(TAG, "Shift+letter in Chinese mode: Rime consumed key but didn't produce uppercase, committing '$char' directly")
                                     } else {
+                                        val committed = result.committedText
                                         uiEventChannel.trySend {
                                             if (committed.isNotEmpty()) commitText(committed)
                                             updateUIWithResult(result)
                                             if (calculatorEngine.isActive()) updateCalculatorCandidates()
                                         }
                                     }
-                                }
-                            } else {
-                                val isAscii = state.isAsciiMode
-                                if (!candState.isComposing || isShiftedChinese) {
-                                                    if (isAscii) {
-                                                        val charToCommit = if (isShifted) char.uppercase() else char.lowercase()
-                                                        val newPending = candState.pendingEnglishText + charToCommit
-                                                        withContext(Dispatchers.Main) {
-                                                            commitText(charToCommit)
-                                                        }
-                                                        candidateState.value = candidateState.value.copy(
-                                                            pendingEnglishText = newPending,
-                                                            associationCandidates = emptyList()
-                                                        )
-                                                        needsUIUpdate = true
-                                                        Log.d(TAG, "English mode: commitText '$charToCommit', pending='$newPending'")
-                                    } else {
+                                } else {
+                                    if (!candState.isComposing || isShiftedChinese) {
                                         committedText = char
                                         needsUIUpdate = true
-                                    }
-                                } else {
-                                    val candidateText = if (rimeEngine.selectCandidate(0)) {
-                                        rimeEngine.commit()
                                     } else {
-                                        ""
+                                        val candidateText = if (rimeEngine.selectCandidate(0)) {
+                                            rimeEngine.commit()
+                                        } else {
+                                            ""
+                                        }
+                                        committedText = candidateText + char
+                                        needsUIUpdate = true
                                     }
-                                    committedText = candidateText + char
-                                    needsUIUpdate = true
                                 }
                             }
                         }
