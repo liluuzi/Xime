@@ -194,8 +194,11 @@ fun CandidateBar(
     }
 
     val candidateListState = rememberLazyListState()
-    LaunchedEffect(displayCandidates) {
-        candidateListState.scrollToItem(0)
+    val isComposingWithCandidates = state is CandidateBarState.ChineseCandidates && state.candidates.isNotEmpty()
+    LaunchedEffect(isComposingWithCandidates) {
+        if (isComposingWithCandidates) {
+            candidateListState.scrollToItem(0)
+        }
     }
 
     Column(

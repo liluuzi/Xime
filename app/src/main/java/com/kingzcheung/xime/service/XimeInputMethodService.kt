@@ -1985,7 +1985,9 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
                 "delete" -> {
                     // 计算器模式：追踪退格
                     calculatorEngine.handleDelete()
-                    updateCalculatorCandidates()
+                    if (calculatorEngine.isActive()) {
+                        updateCalculatorCandidates()
+                    }
                     
                     val layoutState = keyboardViewModel.keyboardState.value
                     val isNumberOrSymbol = layoutState is KeyboardLayoutState.Number || layoutState is KeyboardLayoutState.Symbol
