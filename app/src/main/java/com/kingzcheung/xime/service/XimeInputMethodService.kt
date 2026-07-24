@@ -2081,9 +2081,14 @@ class XimeInputMethodService : InputMethodService(), LifecycleOwner, SavedStateR
                 }
                 "clear_composition" -> {
                     calculatorEngine.clear()
-                    updateCalculatorCandidates()
+                    if (calculatorEngine.isActive()) {
+                        updateCalculatorCandidates()
+                    }
                     rimeEngine.clearComposition()
                     candidateState.value = candidateState.value.copy(
+                        inputText = "",
+                        preeditText = "",
+                        isComposing = false,
                         candidates = emptyList(),
                         candidateComments = emptyList(),
                         associationCandidates = emptyList(),

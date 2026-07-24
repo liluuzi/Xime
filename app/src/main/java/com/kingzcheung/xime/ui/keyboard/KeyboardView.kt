@@ -437,11 +437,13 @@ fun KeyboardView(
                                 "mode_change_number" -> {
                                     modeChangeTarget = KeyboardLayoutAction.SwitchToNumber
                                     SettingsPreferences.setModeChangeTargetIsNumber(context, true)
+                                    callbacks.onKeyPress("clear_composition", false)
                                     viewModel.setKeyboardState(KeyboardLayoutState.Number)
                                 }
                                 "mode_change_common_symbol" -> {
                                     modeChangeTarget = KeyboardLayoutAction.SwitchToCommonSymbol
                                     SettingsPreferences.setModeChangeTargetIsNumber(context, false)
+                                    callbacks.onKeyPress("clear_composition", false)
                                     viewModel.setKeyboardState(keyboardState.transition(
                                         KeyboardLayoutAction.SwitchToCommonSymbol, state.isAsciiMode
                                     ))
