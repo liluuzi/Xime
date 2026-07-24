@@ -5,6 +5,10 @@
 <h1 align="center">Xime - Wubi / Pinyin Input Method for Android</h1>
 
 <p align="center">
+  <b>基于 <a href="https://github.com/ximeiorg/Xime">ximeiorg/Xime</a> 修改，移植搜狗输入法小米版布局</b>
+</p>
+
+<p align="center">
   <a href="README.zh-CN.md">简体中文</a> · <a href="README.zh-TW.md">繁體中文</a>
 </p>
 
@@ -42,6 +46,16 @@ An Android input method built on the [Rime](https://rime.im/) engine, designed f
     <td><img src="docs/Screenshot/方案市场.jpg" width="180"><br><p align="center">Schema Marketplace</p></td>
   </tr>
 </table>
+
+## Modifications (vs original Xime)
+
+- **Sogou-style 26-key layout** - Adjusted swipe-up symbols, bottom row labels (`符` `123`), key proportions, and gap between Shift-Z / M-Backspace
+- **English direct input** - No composing underline, each letter commits immediately; word prediction still works in the candidate bar
+- **Digit keyboard redesign** - 5-column grid matching Sogou digit layout (`/` `-` `+` 符 on left column), uniform key sizing
+- **Theme color toggle** - Quick switch button in the menu bar; added `sogou_light` / `sogou_dark` color schemes
+- **Enter key fix** - Submits composed English without inserting spaces (via Rime's `commit()`)
+- **Clipboard candidates** - Disabled automatic clipboard content appearing in the candidate bar
+- **Language switch** - Cleanly clears composing state instead of selecting first candidate
 
 ## Features
 
